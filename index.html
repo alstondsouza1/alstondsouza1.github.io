@@ -48,6 +48,7 @@
 
     <div id="webcam-container"></div>
     <div id="label-container"></div>
+    <div id="message"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
@@ -105,6 +106,13 @@
             document.body.style.backgroundColor = "#f87171"; // red
         } else {
             document.body.style.backgroundColor = "white";
+        }
+
+        const messageEl = document.getElementById("message");
+        if (topClass.className === "Class 3 - Open Hand" && topClass.probability > 0.85) {
+            messageEl.textContent = "Nice Hand!";
+        } else {
+            messageEl.textContent = "";
         }
 
         // topClass.className is the winning label
