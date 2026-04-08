@@ -11,6 +11,7 @@
         margin: 2rem auto;
         padding: 0 1rem;
         text-align: center;
+        transition: background-color 0.3s ease;
       }
       #webcam-container canvas {
         display: none;
@@ -18,6 +19,7 @@
       }
       #webcam-container.active canvas {
         display: block;
+        margin: 0 auto;
       }
       #label-container div {
         font-size: 1.1rem;
@@ -38,6 +40,23 @@
       }
       button:hover {
         opacity: 0.9;
+      }
+
+      #message {
+        margin-top: 1rem;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #2563eb;
+        min-height: 2rem;
+      }
+
+      #box {
+        width: 100px;
+        height: 100px;
+        background: #2563eb;
+        margin: 20px auto;
+        border-radius: 12px;
+        transition: transform 0.3s ease;
       }
     </style>
   </head>
@@ -105,28 +124,42 @@
             document.body.style.backgroundColor = "#FFFF00"; // yellow
         } else if (topClass.className === "Sad" && topClass.probability > 0.8) {
             document.body.style.backgroundColor = "#C529D6"; // purple
-        } else if (topClass.className === "Angry" && topClass.probability > 0.8) {
+        } else if (topClass.className === "Yolo" && topClass.probability > 0.8) {
             document.body.style.backgroundColor = "#F63109"; // orangish red
         } else if (topClass.className === "Peace" && topClass.probability > 0.8) {
-            document.body.style.backgroundColor = "#00FF6F"; //green
+            document.body.style.backgroundColor = "#00FF6F"; // green
         } else {
             document.body.style.backgroundColor = "pink";
         }
 
         const messageEl = document.getElementById("message");
-        if (topClass.className === "Class 3 - Open Hand" && topClass.probability > 0.85) {
-            messageEl.textContent = "Nice Hand!";
+        if (topClass.className === "Happy" && topClass.probability > 0.85) {
+            messageEl.textContent = "You are Happy!";
             messageEl.style.fontSize = "1.5rem";
-            messageEl.style.color = "#2563eb"; // blue
+            messageEl.style.color = "#2563eb";
+        } else if (topClass.className === "Sad" && topClass.probability > 0.85) {
+            messageEl.textContent = "You are Sad!";
+            messageEl.style.fontSize = "1.5rem";
+            messageEl.style.color = "#2563eb";
+        } else if (topClass.className === "Yolo" && topClass.probability > 0.85) {
+            messageEl.textContent = "You are Yolo!";
+            messageEl.style.fontSize = "1.5rem";
+            messageEl.style.color = "#2563eb";
+        } else if (topClass.className === "Peace" && topClass.probability > 0.85) {
+            messageEl.textContent = "Peace!";
+            messageEl.style.fontSize = "1.5rem";
+            messageEl.style.color = "#2563eb";
         } else {
             messageEl.textContent = "";
         }
 
         const box = document.getElementById("box");
-        if (topClass.className === "Class 1 - Thumbs Up" && topClass.probability > 0.7) {
+        if (topClass.className === "Happy" && topClass.probability > 0.7) {
             box.style.transform = "translateX(-100px)";
-        } else if (topClass.className === "Class 3 - Open Hand" && topClass.probability > 0.7) {
+        } else if (topClass.className === "Peace" && topClass.probability > 0.7) {
             box.style.transform = "translateX(100px)";
+        } else if (topClass.className === "Yolo" && topClass.probability > 0.7) {
+            box.style.transform = "translateX(150px)";
         } else {
             box.style.transform = "translateX(0)";
         }
@@ -157,6 +190,9 @@
           document
             .getElementById("webcam-container")
             .classList.remove("active");
+          document.getElementById("message").textContent = "";
+          document.getElementById("box").style.transform = "translateX(0)";
+          document.body.style.backgroundColor = "white";
           button.textContent = "Start Camera";
           button.classList.remove("stop");
         }
