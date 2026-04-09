@@ -41,7 +41,10 @@
       button:hover {
         opacity: 0.9;
       }
-      button:disabled { background: #9ca3af; cursor: not-allowed; }
+      button:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+      }
 
       #detected {
         margin-top: 1rem;
@@ -71,7 +74,9 @@
         margin-top: 0.25rem;
       }
 
-      .player-side { text-align: center; }
+      .player-side {
+        text-align: center;
+      }
 
       #vs-text {
         font-size: 1.5rem;
@@ -85,9 +90,15 @@
         min-height: 2.5rem;
         margin: 0.5rem 0;
       }
-      #result.win  { color: #16a34a; }
-      #result.lose { color: #dc2626; }
-      #result.tie  { color: #d97706; }
+      #result.win {
+        color: #16a34a;
+      }
+      #result.lose {
+        color: #dc2626;
+      }
+      #result.tie {
+        color: #d97706;
+      }
 
       #score {
         font-size: 1.1rem;
@@ -106,7 +117,6 @@
 
     <div id="detected">Waiting for camera to start</div>
     <button id="lock-btn" onclick="lockIn()" disabled>Lock In Your Answer</button>
-
 
     <div id="webcam-container"></div>
 
@@ -146,7 +156,12 @@
                (a === "Paper" && b === "Rock");
       }
 
-      let pendingMove = null;
+      function toEmoji(move) {
+        if (move === "Rock") return "👊 Rock";
+        if (move === "Paper") return "✋ Paper";
+        if (move === "Scissors") return "✌️ Scissors";
+        return "❓";
+      }
 
       async function init() {
         model = await tmImage.load(URL + "model.json", URL + "metadata.json");
@@ -181,7 +196,6 @@
       async function predict() {
         const prediction = await model.predict(webcam.canvas);
 
-        // Find the class with the highest probability
         let topClass = prediction[0];
         for (let i = 1; i < prediction.length; i++) {
           if (prediction[i].probability > topClass.probability) {
@@ -212,28 +226,31 @@
         if (!currentDetected || currentDetected === "Background") return;
 
         const playerMove = currentDetected;
-        
-        // Select random move for mocking CPU
         const cpuMove = MOVES[Math.floor(Math.random() * MOVES.length)];
 
-        document.getElementById("player-guess").textContent = playerMove;
-        document.getElementById("cpu-guess").textContent = cpuMove;
+        document.getElementById("player-guess").textContent = toEmoji(playerMove);
+        document.getElementById("cpu-guess").textContent = toEmoji(cpuMove);
         document.getElementById("detected").textContent = `You played: ${playerMove}`;
         document.getElementById("game-area").style.display = "block";
 
         const resultEl = document.getElementById("result");
+        resultEl.className = "";
+
         if (playerMove === cpuMove) {
           resultEl.textContent = "It's a Tie!";
-          resultEl.className = "tie";
+          resultEl.classList.add("tie");
           score.ties++;
+          document.body.style.backgroundColor = "#fde68a"; // yellow
         } else if (beats(playerMove, cpuMove)) {
           resultEl.textContent = "You Win!";
-          resultEl.className = "win";
+          resultEl.classList.add("win");
           score.wins++;
+          document.body.style.backgroundColor = "#86efac"; // green
         } else {
-          resultEl.textContent = "You Lose";
-          resultEl.className = "lose";
+          resultEl.textContent = "You Lose!";
+          resultEl.classList.add("lose");
           score.losses++;
+          document.body.style.backgroundColor = "#fca5a5"; // red
         }
 
         document.getElementById("score").textContent =
@@ -254,6 +271,10 @@
           document.getElementById("lock-btn").disabled = true;
           document.getElementById("game-area").style.display = "none";
           document.getElementById("result").textContent = "";
+          document.getElementById("result").className = "";
+          document.getElementById("player-guess").textContent = "❓";
+          document.getElementById("cpu-guess").textContent = "❓";
+          document.body.style.backgroundColor = "white";
           currentDetected = null;
           button.textContent = "Start Camera";
           button.classList.remove("stop");
