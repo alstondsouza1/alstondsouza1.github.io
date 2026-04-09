@@ -41,8 +41,9 @@
       button:hover {
         opacity: 0.9;
       }
+      button:disabled { background: #9ca3af; cursor: not-allowed; }
 
-      #message {
+      #detected {
         margin-top: 1rem;
         font-size: 1.5rem;
         font-weight: bold;
@@ -50,34 +51,102 @@
         min-height: 2rem;
       }
 
-      #box {
-        width: 100px;
-        height: 100px;
-        background: #2563eb;
-        margin: 20px auto;
-        border-radius: 12px;
-        transition: transform 0.3s ease;
+      #game-area {
+        display: none;
+        margin-top: 1rem;
+      }
+
+      .versus {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 2rem;
+        font-size: 1.5rem;
+        margin: 1rem 0;
+      }
+
+      .versus-label {
+        font-size: 0.9rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+      }
+
+      .player-side { text-align: center; }
+
+      #vs-text {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #6b7280;
+      }
+
+      #result {
+        font-size: 2rem;
+        font-weight: bold;
+        min-height: 2.5rem;
+        margin: 0.5rem 0;
+      }
+      #result.win  { color: #16a34a; }
+      #result.lose { color: #dc2626; }
+      #result.tie  { color: #d97706; }
+
+      #score {
+        font-size: 1.1rem;
+        color: #374151;
+        margin-bottom: 0.5rem;
       }
     </style>
   </head>
   <body>
-    <h1>My Teachable Machine App</h1>
+    <h1>Rock Paper Scissors</h1>
+    <p>Show your hand to the camera, then lock in your move!</p>
 
-    <button id="toggleButton" onclick="toggleCamera()">Start Camera</button>
+    <div class="buttons">
+      <button id="toggleButton" onclick="toggleCamera()">Start Camera</button>
+    </div>
+
+    <div id="detected">Waiting for camera to start</div>
+    <button id="lock-btn" onclick="lockIn()" disabled>Lock In Your Answer</button>
+
 
     <div id="webcam-container"></div>
+
+    <div id="game-area">
+      <div class="versus">
+        <div class="player-side">
+          <div id="player-guess">❓</div>
+          <div class="versus-label">You</div>
+        </div>
+        <div id="vs-text">VS</div>
+        <div class="player-side">
+          <div id="cpu-guess">❓</div>
+          <div class="versus-label">Computer</div>
+        </div>
+      </div>
+      <div id="result"></div>
+    </div>
+
+    <div id="score">Wins: 0 | Losses: 0 | Ties: 0</div>
     <div id="label-container"></div>
-    <div id="message"></div>
-    <div id="box"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script>
-      // REPLACE THIS with your model URL from Teachable Machine:
-      const URL = "https://teachablemachine.withgoogle.com/models/irKSdtVTd/";
+      const URL = "https://teachablemachine.withgoogle.com/models/4ki_Ofmuw/";
 
       let model, webcam, labelContainer, maxPredictions;
       let isRunning = false;
+      let currentDetected = null;
+      let score = { wins: 0, losses: 0, ties: 0 };
+
+      const MOVES = ["Rock", "Paper", "Scissors"];
+
+      function beats(a, b) {
+        return (a === "Rock" && b === "Scissors") ||
+               (a === "Scissors" && b === "Paper") ||
+               (a === "Paper" && b === "Rock");
+      }
+
+      let pendingMove = null;
 
       async function init() {
         model = await tmImage.load(URL + "model.json", URL + "metadata.json");
@@ -120,62 +189,55 @@
           }
         }
 
-        if (topClass.className === "Happy" && topClass.probability > 0.8) {
-            document.body.style.backgroundColor = "#FFFF00"; // yellow
-        } else if (topClass.className === "Sad" && topClass.probability > 0.8) {
-            document.body.style.backgroundColor = "#C529D6"; // purple
-        } else if (topClass.className === "Yolo" && topClass.probability > 0.8) {
-            document.body.style.backgroundColor = "#F63109"; // orangish red
-        } else if (topClass.className === "Peace" && topClass.probability > 0.8) {
-            document.body.style.backgroundColor = "#00FF6F"; // green
+        const detectedEl = document.getElementById("detected");
+        const lockBtn = document.getElementById("lock-btn");
+
+        if (topClass.className !== "Background" && topClass.probability > 0.75) {
+          currentDetected = topClass.className;
+          detectedEl.textContent = `Detected: ${topClass.className}. Is this your move?`;
+          lockBtn.disabled = false;
         } else {
-            document.body.style.backgroundColor = "pink";
+          currentDetected = null;
+          detectedEl.textContent = "Show Rock, Paper, or Scissors";
+          lockBtn.disabled = true;
         }
 
-        const messageEl = document.getElementById("message");
-        if (topClass.className === "Happy" && topClass.probability > 0.85) {
-            messageEl.textContent = "You are Happy!";
-            messageEl.style.fontSize = "1.5rem";
-            messageEl.style.color = "#2563eb";
-        } else if (topClass.className === "Sad" && topClass.probability > 0.85) {
-            messageEl.textContent = "You are Sad!";
-            messageEl.style.fontSize = "1.5rem";
-            messageEl.style.color = "#2563eb";
-        } else if (topClass.className === "Yolo" && topClass.probability > 0.85) {
-            messageEl.textContent = "You are Yolo!";
-            messageEl.style.fontSize = "1.5rem";
-            messageEl.style.color = "#2563eb";
-        } else if (topClass.className === "Peace" && topClass.probability > 0.85) {
-            messageEl.textContent = "Peace!";
-            messageEl.style.fontSize = "1.5rem";
-            messageEl.style.color = "#2563eb";
-        } else {
-            messageEl.textContent = "";
-        }
-
-        const box = document.getElementById("box");
-        if (topClass.className === "Happy" && topClass.probability > 0.7) {
-            box.style.transform = "translateX(-100px)";
-        } else if (topClass.className === "Peace" && topClass.probability > 0.7) {
-            box.style.transform = "translateX(100px)";
-        } else if (topClass.className === "Yolo" && topClass.probability > 0.7) {
-            box.style.transform = "translateX(150px)";
-        } else {
-            box.style.transform = "translateX(0)";
-        }
-
-        // topClass.className is the winning label
-        // topClass.probability is how confident the model is
-        console.log(topClass.className, topClass.probability);
-
-        // Update the display
         for (let i = 0; i < maxPredictions; i++) {
-          const classPrediction =
-            prediction[i].className +
-            ": " +
-            prediction[i].probability.toFixed(2);
-          labelContainer.childNodes[i].innerHTML = classPrediction;
+          labelContainer.childNodes[i].innerHTML =
+            prediction[i].className + ": " + prediction[i].probability.toFixed(2);
         }
+      }
+
+      function lockIn() {
+        if (!currentDetected || currentDetected === "Background") return;
+
+        const playerMove = currentDetected;
+        
+        // Select random move for mocking CPU
+        const cpuMove = MOVES[Math.floor(Math.random() * MOVES.length)];
+
+        document.getElementById("player-guess").textContent = playerMove;
+        document.getElementById("cpu-guess").textContent = cpuMove;
+        document.getElementById("detected").textContent = `You played: ${playerMove}`;
+        document.getElementById("game-area").style.display = "block";
+
+        const resultEl = document.getElementById("result");
+        if (playerMove === cpuMove) {
+          resultEl.textContent = "It's a Tie!";
+          resultEl.className = "tie";
+          score.ties++;
+        } else if (beats(playerMove, cpuMove)) {
+          resultEl.textContent = "You Win!";
+          resultEl.className = "win";
+          score.wins++;
+        } else {
+          resultEl.textContent = "You Lose";
+          resultEl.className = "lose";
+          score.losses++;
+        }
+
+        document.getElementById("score").textContent =
+          `Wins: ${score.wins} | Losses: ${score.losses} | Ties: ${score.ties}`;
       }
 
       async function toggleCamera() {
@@ -187,12 +249,12 @@
         } else {
           isRunning = false;
           webcam.stop();
-          document
-            .getElementById("webcam-container")
-            .classList.remove("active");
-          document.getElementById("message").textContent = "";
-          document.getElementById("box").style.transform = "translateX(0)";
-          document.body.style.backgroundColor = "white";
+          document.getElementById("webcam-container").classList.remove("active");
+          document.getElementById("detected").textContent = "Waiting for camera to start";
+          document.getElementById("lock-btn").disabled = true;
+          document.getElementById("game-area").style.display = "none";
+          document.getElementById("result").textContent = "";
+          currentDetected = null;
           button.textContent = "Start Camera";
           button.classList.remove("stop");
         }
